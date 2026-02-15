@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs';
-import { DatabaseSync } from 'node:sqlite';
+import  Database  from 'better-sqlite3';
 import type { MileageUnit, VehicleType } from '$lib/stores/vehicleProfiles';
 
 export type VehicleProfileRow = {
@@ -20,7 +20,7 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbPath = path.join(dataDir, 'braketester.db');
-const db = new DatabaseSync(dbPath);
+const db = new Database(dbPath);
 
 db.exec(`
 	CREATE TABLE IF NOT EXISTS vehicle_profiles (
