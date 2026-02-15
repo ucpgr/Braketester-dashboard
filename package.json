@@ -1,0 +1,47 @@
+{
+	"name": "braketester-dashboard",
+	"private": true,
+	"version": "0.0.1",
+	"type": "module",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"deploy": "C:\\cygwin64\\bin\\rsync.exe -av --delete -e C:\\cygwin64\\bin\\ssh.exe build server.js server package.json dan@10.42.0.2:/opt/braketester/ && ssh dan@10.42.0.2 \"sudo systemctl restart braketester\"",
+		"build:deploy": "npm run build && npm run deploy",
+		"run": "node server.js"
+	},
+	"devDependencies": {
+		"@eslint/compat": "^2.0.1",
+		"@eslint/js": "^9.39.2",
+		"@lucide/svelte": "^0.563.1",
+		"@sveltejs/adapter-auto": "^7.0.0",
+		"@sveltejs/adapter-node": "^5.5.2",
+		"@sveltejs/kit": "^2.50.1",
+		"@sveltejs/vite-plugin-svelte": "^6.2.4",
+		"@tailwindcss/vite": "^4.1.18",
+		"@types/node": "^22",
+		"clsx": "^2.1.1",
+		"eslint": "^9.39.2",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.14.0",
+		"globals": "^17.1.0",
+		"prettier": "^3.8.1",
+		"prettier-plugin-svelte": "^3.4.1",
+		"prettier-plugin-tailwindcss": "^0.7.2",
+		"svelte": "^5.48.2",
+		"tailwind-merge": "^3.4.0",
+		"tailwind-variants": "^3.2.2",
+		"tailwindcss": "^4.1.18",
+		"tw-animate-css": "^1.4.0",
+		"vite": "^7.3.1"
+	},
+	"dependencies": {
+		"serialport": "^13.0.0",
+		"socket.io": "^4.8.3",
+		"socket.io-client": "^4.8.3"
+	}
+}
