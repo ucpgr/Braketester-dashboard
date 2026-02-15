@@ -3,6 +3,7 @@
 	import GaugeDiff from '$lib/components/gauge/GaugeDiff.svelte';
 	import TextWeight from '$lib/components/TextWeight/TextWeight.svelte';
 	import StatusIndicator from '$lib/components/StatusIndicator/StatusIndicator.svelte';
+	import TestDetailsCard from '$lib/components/TestDetailsCard.svelte';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { telemetry } from '$lib/stores/telemetry';
 	import { imbalance } from '$lib/stores/imbalance';
@@ -10,35 +11,32 @@
 
 <div class="mx-auto mt-10 max-w-6xl">
 	<Card
-		class="p-0 bg-gradient-to-br from-zinc-700/40 via-zinc-800/40 to-zinc-900/40
-           border border-white/10
+		class="border border-white/10 bg-gradient-to-br from-zinc-700/40 via-zinc-800/40
+           to-zinc-900/40 p-0
            shadow-[0_30px_80px_rgba(0,0,0,0.6)]"
 	>
-		<CardContent class="p-0 w-full aspect-[3/1] max-h-[400px]">
-			<div class="flex flex-col h-full">
-
+		<CardContent class="aspect-[3/1] max-h-[400px] w-full p-0">
+			<div class="flex h-full flex-col">
 				<!-- Main gauge area -->
-				<div class="flex-1 min-h-0">
-					<div class="flex items-stretch gap-8 w-full h-full overflow-hidden">
-
+				<div class="min-h-0 flex-1">
+					<div class="flex h-full w-full items-stretch gap-8 overflow-hidden">
 						<!-- Left gauge -->
-						<div class="flex-1 min-w-0 flex items-center justify-center">
+						<div class="flex min-w-0 flex-1 items-center justify-center">
 							<Gauge value={$telemetry?.brakeForceLeft ?? 0} min={0} max={5000} unit="kgf" />
 						</div>
 
 						<!-- Centre column -->
-						<div class="flex flex-col flex-1 min-w-0 min-h-0">
-
+						<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 							<!-- Top + centre gauge cluster -->
-							<div class="shrink-0 pt-2 flex justify-center">
+							<div class="flex shrink-0 justify-center pt-2">
 								<div
 									class="
 										grid
+										w-full
 										grid-cols-2
 										grid-rows-[auto_auto]
-										gap-3
 										place-items-center
-										w-full
+										gap-3
 									"
 								>
 									<!-- Top-left small gauge -->
@@ -58,12 +56,11 @@
 								</div>
 							</div>
 
-							<div class="flex-1 min-h-0"></div>
-
+							<div class="min-h-0 flex-1"></div>
 						</div>
 
 						<!-- Right gauge -->
-						<div class="flex-1 min-w-0 flex items-center justify-center">
+						<div class="flex min-w-0 flex-1 items-center justify-center">
 							<Gauge value={$telemetry?.brakeForceRight ?? 0} min={0} max={5000} unit="kgf" />
 						</div>
 					</div>
@@ -91,8 +88,9 @@
 						</div>
 					</div>
 				</div>
-
 			</div>
 		</CardContent>
 	</Card>
+
+	<TestDetailsCard />
 </div>
