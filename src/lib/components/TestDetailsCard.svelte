@@ -7,35 +7,39 @@
 >
 	<CardContent class="grid gap-8 p-5 md:grid-cols-[1.2fr_1fr] md:items-center">
 		<div class="space-y-4">
-			<div class="flex flex-wrap items-center gap-3 text-zinc-300">
+			<div class="grid w-full grid-cols-[auto_1fr] items-center gap-3 text-zinc-300">
 				<div
 					class="inline-flex min-w-44 items-center justify-between gap-3 rounded-md border border-white/15 bg-zinc-800/70 px-3 py-2 text-sm font-semibold"
 				>
 					<span>DAF 6x2</span>
 					<span class="text-xs text-zinc-500">▼</span>
 				</div>
-				<p class="text-lg tracking-wide text-zinc-300">Test ID: 2024-04-24-027</p>
+				<p class="w-full text-right text-[11px] tracking-[0.2em] text-zinc-500">
+					Test ID: 2024-04-24-027
+				</p>
 			</div>
 
-			<div class="max-w-sm space-y-3">
-				<div class="rounded-md border border-white/15 bg-zinc-900/55 p-2.5">
-					<p class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase">Mileage</p>
-					<div class="flex gap-2">
-						<input
-							type="text"
-							value="462,810"
-							class="h-8 w-full rounded border border-white/15 bg-zinc-800/75 px-2 text-sm text-zinc-200 outline-none"
-							readonly
-						/>
-						<div class="inline-flex overflow-hidden rounded border border-white/15 bg-zinc-800/75">
-							<button
-								type="button"
-								class="h-8 bg-sky-500/25 px-2 text-xs font-semibold text-zinc-200"
-							>
-								Km
-							</button>
-							<button type="button" class="h-8 px-2 text-xs font-semibold text-zinc-400">mi</button>
-						</div>
+			<div class="space-y-3">
+				<div class="flex w-fit items-center gap-2">
+					<input
+						type="text"
+						value="462,810"
+						class="h-8 w-32 rounded border border-white/15 bg-zinc-800/75 px-2 text-sm text-zinc-200 outline-none"
+						readonly
+					/>
+					<div
+						class="inline-flex h-8 min-w-[84px] shrink-0 overflow-hidden rounded border border-white/15 bg-zinc-800/75"
+					>
+						<button
+							type="button"
+							class="h-full w-10 bg-sky-500/25 px-2 text-xs leading-none font-semibold text-zinc-200"
+						>
+							Km
+						</button>
+						<button
+							type="button"
+							class="h-full w-10 px-2 text-xs leading-none font-semibold text-zinc-400">mi</button
+						>
 					</div>
 				</div>
 
