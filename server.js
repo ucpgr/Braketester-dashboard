@@ -8,6 +8,9 @@ import { handler } from './build/handler.js';
 import './build/env.js';
 
 import { watchPrnFolder } from './server/prnWatcher.js';
+import { startSerialPrnBridge } from './server/serialPrnBridge.js';
+
+startSerialPrnBridge();
 
 watchPrnFolder('/opt/printqueue/incoming', () => ({
 	user: {

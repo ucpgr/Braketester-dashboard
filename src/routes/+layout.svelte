@@ -1,10 +1,24 @@
 <script>
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
+	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 
 	let { children } = $props();
+
+	const activeClass =
+		'bg-sky-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 hover:bg-sky-500';
+	const inactiveClass =
+		'bg-zinc-800 text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 hover:bg-zinc-700';
+
+	function isActive(path) {
+		if (path === '/') {
+			return page.url.pathname === '/';
+		}
+
+		return page.url.pathname.startsWith(path);
+	}
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -33,27 +47,22 @@
 
 			<!-- Right -->
 			<div class="ml-auto flex items-center gap-2">
-				<Button
-					href="/"
-					size="sm"
-					class="bg-sky-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 hover:bg-sky-500"
-				>
-					Live
-				</Button>
+				<Button href="/" size="sm" class={isActive('/') ? activeClass : inactiveClass}>Live</Button>
 
 				<Button
 					href="/settings"
 					size="sm"
 					variant="secondary"
-					class="bg-zinc-800 text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 hover:bg-zinc-700"
+					class={isActive('/settings') ? activeClass : inactiveClass}
 				>
 					Settings
 				</Button>
 
 				<Button
+					href="/results"
 					size="sm"
 					variant="secondary"
-					class="bg-zinc-800 text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ring-1 ring-white/10 hover:bg-zinc-700"
+					class={isActive('/results') ? activeClass : inactiveClass}
 				>
 					Results
 				</Button>
