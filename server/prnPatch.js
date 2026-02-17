@@ -14,6 +14,29 @@ export const FIELDS = {
 	testTime:  { offset: 10257, length: 8 }
 };
 
+export const VERIFY = [
+	{ label: 'Lic.Plate:', offset: 10041 },
+	{ label: 'Make',      offset: 10121 },
+	{ label: 'Model',     offset: 10201 },
+	{ label: 'Km',        offset: 10281 },
+	{ label: 'Test Date', offset: 10165 },
+	{ label: 'Test Time', offset: 10245 }
+];
+
+function verifyTemplate(buf) {
+	for (const { label, offset } of VERIFY) {
+		const actual = buf
+			.slice(offset, offset + label.length)
+			.toString('ascii');
+
+		if (actual !== label) {
+			throw new Error(
+				`PRN template mismatch: expected "${label}" at offset ${offset}, got "${actual}"`
+			);
+		}
+	}
+}
+
 function writeFixed(buf, { offset, length }, value) {
 	const text = String(value ?? '').padEnd(length, ' ').slice(0, length);
 	buf.write(text, offset, 'ascii');
@@ -21,6 +44,8 @@ function writeFixed(buf, { offset, length }, value) {
 
 export function patchPrnFile(inputPath, outputPath, data) {
 	const buf = fs.readFileSync(inputPath);
+
+	verifyTemplate(buf);
 
 	// User info (3 lines)
 	writeFixed(buf, FIELDS.userLine1, data.user?.line1);
