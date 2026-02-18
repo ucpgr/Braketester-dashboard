@@ -44,10 +44,16 @@ export async function POST({ request }) {
 		return json({ error: 'selectedPortId is required' }, { status: 400 });
 	}
 
-	const sentByBridge = await sendSerialBridgeCommand(selectedPortId, 't');
-	if (!sentByBridge) {
+	const bridgeSendResult = await sendSerialBridgeCommand(selectedPortId, 't');
+	if (!bridgeSendResult.ok) {
+		console.error(
+			`Settings test send failed for ${selectedPortId}. Bridge reason: ${bridgeSendResult.reason}`
+		);
+
 		return json(
-			{ error: 'Failed to send test command over active serial bridge port' },
+			{
+				error: `Failed to send test command over active serial bridge port (${bridgeSendResult.reason})`
+			},
 			{ status: 500 }
 		);
 	}

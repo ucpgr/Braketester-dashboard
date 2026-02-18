@@ -43,8 +43,12 @@ let pendingBuffer = Buffer.alloc(0);
 let inactivityTimer = null;
 
 function writeToActivePort(data) {
-	if (!activePort || !activePort.isOpen) {
-		throw new Error('No active serial port connection');
+	if (!activePort) {
+		throw new Error('No active serial port object');
+	}
+
+	if (!activePort.isOpen) {
+		throw new Error('Active serial port is not open');
 	}
 
 	return new Promise((resolve, reject) => {
@@ -67,16 +71,36 @@ function writeToActivePort(data) {
 }
 
 export async function sendSerialBridgeCommand(portId, data) {
-	if (!portId || portId !== configuredPortId) {
-		return false;
+	if (!portId) {
+		console.error('Serial PRN bridge test send failed: requested portId was empty');
+		return { ok: false, reason: 'missing-port-id' };
+	}
+
+	if (portId !== configuredPortId) {
+		console.error(
+			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'port-mismatch' };
+	}
+
+	if (!activePort) {
+		console.error(
+			`Serial PRN bridge test send failed: no active port object for configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'no-active-port' };
+	}
+
+	if (!activePort.isOpen) {
+		console.error(`Serial PRN bridge test send failed: active port ${portId} is not open`);
+		return { ok: false, reason: 'port-not-open' };
 	}
 
 	try {
 		await writeToActivePort(data);
-		return true;
+		return { ok: true };
 	} catch (error) {
-		console.error(`Serial PRN bridge failed to write to ${portId}:`, error);
-		return false;
+		console.error(`Serial PRN bridge failed to write test data to ${portId}:`, error);
+		return { ok: false, reason: 'write-error' };
 	}
 }
 
