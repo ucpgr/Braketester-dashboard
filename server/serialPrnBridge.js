@@ -125,8 +125,6 @@ export function startSerialPrnBridge() {
 	}
 
 	bridgeState.isStarted = true;
-<<<<<<< codex/add-test-button-for-serial-port-2cc219
-=======
 
 	if (activePortId && portId !== activePortId) {
 		console.error(
@@ -148,7 +146,6 @@ export function startSerialPrnBridge() {
 		);
 		return { ok: false, reason: 'no-active-port' };
 	}
->>>>>>> main
 
 	if (!activePort.isOpen) {
 		console.error(`Serial PRN bridge test send failed: active port ${portId} is not open`);
@@ -174,7 +171,6 @@ export function startSerialPrnBridge() {
 		bridgeState.inactivityTimer = null;
 	}
 
-<<<<<<< codex/add-test-button-for-serial-port-2cc219
 	function flushPendingBytes() {
 		if (bridgeState.pendingBuffer.length === 0) {
 			return Promise.resolve();
@@ -182,7 +178,6 @@ export function startSerialPrnBridge() {
 	async function flushPendingBytes() {
 		if (bridgeState.pendingBuffer.length === 0) {
 			return;
->>>>>>> main
 		}
 
 		const bytesToWrite = bridgeState.pendingBuffer;
@@ -205,11 +200,9 @@ export function startSerialPrnBridge() {
 
 	function closePort() {
 		clearInactivityTimer();
-<<<<<<< codex/add-test-button-for-serial-port-2cc219
 
 		return flushPendingBytes().then(() => {
 			if (!bridgeState.activePort) {
-=======
 		await flushPendingBytes();
 
 		if (!bridgeState.activePort) {
@@ -224,7 +217,6 @@ export function startSerialPrnBridge() {
 			portToClose.removeAllListeners();
 			if (!portToClose.isOpen) {
 				resolve();
->>>>>>> main
 				return;
 			}
 
@@ -270,7 +262,6 @@ export function startSerialPrnBridge() {
 			bridgeState.activePortId = portId;
 			console.log(`Serial PRN bridge listening on ${portId}`);
 		});
-<<<<<<< codex/add-test-button-for-serial-port-2cc219
 	}
 
 	function reconfigurePort(nextPortId) {
@@ -290,7 +281,6 @@ export function startSerialPrnBridge() {
 				console.error(`Serial PRN bridge failed to open ${bridgeState.configuredPortId}:`, error);
 			});
 		});
-=======
 
 		bridgeState.activePort = port;
 		bridgeState.activePortId = portId;
@@ -315,7 +305,6 @@ export function startSerialPrnBridge() {
 		} catch (error) {
 			console.error(`Serial PRN bridge failed to open ${bridgeState.configuredPortId}:`, error);
 		}
->>>>>>> main
 	}
 
 	const pollTimer = setInterval(() => {
