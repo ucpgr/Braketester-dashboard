@@ -128,6 +128,7 @@ export function startSerialPrnBridge() {
 
 	bridgeState.isStarted = true;
 
+export function startSerialPrnBridge() {
 	function clearInactivityTimer() {
 		if (!bridgeState.inactivityTimer) {
 			return;
