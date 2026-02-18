@@ -126,6 +126,42 @@ export function startSerialPrnBridge() {
 
 	bridgeState.isStarted = true;
 
+	if (activePortId && portId !== activePortId) {
+		console.error(
+			`Serial PRN bridge test send failed: requested port ${portId} does not match active port ${activePortId}`
+		);
+		return { ok: false, reason: 'port-mismatch' };
+	}
+
+	if (!activePortId && portId !== configuredPortId) {
+		console.error(
+			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'port-mismatch' };
+	}
+
+	if (!activePort) {
+		console.error(
+			`Serial PRN bridge test send failed: no active port object for configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'no-active-port' };
+	}
+
+	if (!activePort.isOpen) {
+		console.error(`Serial PRN bridge test send failed: active port ${portId} is not open`);
+		return { ok: false, reason: 'port-not-open' };
+	}
+
+	try {
+		await writeToActivePort(data);
+		return { ok: true };
+	} catch (error) {
+		console.error(`Serial PRN bridge failed to write test data to ${portId}:`, error);
+		return { ok: false, reason: 'write-error' };
+	}
+}
+
+export function startSerialPrnBridge() {
 	function clearInactivityTimer() {
 		if (!bridgeState.inactivityTimer) {
 			return;
