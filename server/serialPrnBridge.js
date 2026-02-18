@@ -38,9 +38,11 @@ function createRandomPrnPath() {
 	return path.join(PRN_OUTPUT_DIR, fileName);
 }
 
+const SERIAL_BRIDGE_STATE_KEY = Symbol.for('braketester.serialPrnBridgeState');
+
 const bridgeState =
-	globalThis.__serialPrnBridgeState ??
-	(globalThis.__serialPrnBridgeState = {
+	globalThis[SERIAL_BRIDGE_STATE_KEY] ??
+	(globalThis[SERIAL_BRIDGE_STATE_KEY] = {
 		configuredPortId: '',
 		activePort: null,
 		activePortId: '',
@@ -126,41 +128,6 @@ export function startSerialPrnBridge() {
 
 	bridgeState.isStarted = true;
 
-	if (activePortId && portId !== activePortId) {
-		console.error(
-			`Serial PRN bridge test send failed: requested port ${portId} does not match active port ${activePortId}`
-		);
-		return { ok: false, reason: 'port-mismatch' };
-	}
-
-	if (!activePortId && portId !== configuredPortId) {
-		console.error(
-			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
-		);
-		return { ok: false, reason: 'port-mismatch' };
-	}
-
-	if (!activePort) {
-		console.error(
-			`Serial PRN bridge test send failed: no active port object for configured port ${configuredPortId || '(none)'}`
-		);
-		return { ok: false, reason: 'no-active-port' };
-	}
-
-	if (!activePort.isOpen) {
-		console.error(`Serial PRN bridge test send failed: active port ${portId} is not open`);
-		return { ok: false, reason: 'port-not-open' };
-	}
-
-	try {
-		await writeToActivePort(data);
-		return { ok: true };
-	} catch (error) {
-		console.error(`Serial PRN bridge failed to write test data to ${portId}:`, error);
-		return { ok: false, reason: 'write-error' };
-	}
-}
-
 export function startSerialPrnBridge() {
 	function clearInactivityTimer() {
 		if (!bridgeState.inactivityTimer) {
@@ -174,10 +141,6 @@ export function startSerialPrnBridge() {
 	function flushPendingBytes() {
 		if (bridgeState.pendingBuffer.length === 0) {
 			return Promise.resolve();
-=======
-	async function flushPendingBytes() {
-		if (bridgeState.pendingBuffer.length === 0) {
-			return;
 		}
 
 		const bytesToWrite = bridgeState.pendingBuffer;
@@ -203,20 +166,6 @@ export function startSerialPrnBridge() {
 
 		return flushPendingBytes().then(() => {
 			if (!bridgeState.activePort) {
-		await flushPendingBytes();
-
-		if (!bridgeState.activePort) {
-			return;
-		}
-
-		const portToClose = bridgeState.activePort;
-		bridgeState.activePort = null;
-		bridgeState.activePortId = '';
-
-		await new Promise((resolve) => {
-			portToClose.removeAllListeners();
-			if (!portToClose.isOpen) {
-				resolve();
 				return;
 			}
 
@@ -281,30 +230,6 @@ export function startSerialPrnBridge() {
 				console.error(`Serial PRN bridge failed to open ${bridgeState.configuredPortId}:`, error);
 			});
 		});
-
-		bridgeState.activePort = port;
-		bridgeState.activePortId = portId;
-		console.log(`Serial PRN bridge listening on ${portId}`);
-	}
-
-	async function reconfigurePort(nextPortId) {
-		if (nextPortId === bridgeState.configuredPortId) {
-			return;
-		}
-
-		bridgeState.configuredPortId = nextPortId;
-		await closePort();
-
-		if (!bridgeState.configuredPortId) {
-			console.log('Serial PRN bridge idle (no configured serial port)');
-			return;
-		}
-
-		try {
-			await openPort(bridgeState.configuredPortId);
-		} catch (error) {
-			console.error(`Serial PRN bridge failed to open ${bridgeState.configuredPortId}:`, error);
-		}
 	}
 
 	const pollTimer = setInterval(() => {
