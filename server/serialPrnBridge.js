@@ -27,8 +27,9 @@ function readConfiguredPortId() {
 			.prepare('SELECT value FROM app_settings WHERE key = ?')
 			.get(SERIAL_PORT_SETTING_KEY);
 		return typeof row?.value === 'string' ? row.value.trim() : '';
-	} catch {
-		return '';
+	} catch (error) {
+		console.error('Serial PRN bridge failed to read configured port from DB:', error);
+		return null;
 	}
 }
 
@@ -76,7 +77,15 @@ export async function sendSerialBridgeCommand(portId, data) {
 		return { ok: false, reason: 'missing-port-id' };
 	}
 
-	if (portId !== configuredPortId) {
+	const activePortPath = typeof activePort?.path === 'string' ? activePort.path : '';
+	if (activePortPath && portId !== activePortPath) {
+		console.error(
+			`Serial PRN bridge test send failed: requested port ${portId} does not match active port ${activePortPath}`
+		);
+		return { ok: false, reason: 'port-mismatch' };
+	}
+
+	if (!activePortPath && portId !== configuredPortId) {
 		console.error(
 			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
 		);
@@ -207,14 +216,21 @@ export function startSerialPrnBridge() {
 
 	const pollTimer = setInterval(() => {
 		const nextPortId = readConfiguredPortId();
+		if (nextPortId === null) {
+			return;
+		}
+
 		reconfigurePort(nextPortId).catch((error) => {
 			console.error('Serial PRN bridge reconfiguration failed:', error);
 		});
 	}, SETTINGS_POLL_MS);
 
-	reconfigurePort(readConfiguredPortId()).catch((error) => {
-		console.error('Serial PRN bridge startup failed:', error);
-	});
+	const startupPortId = readConfiguredPortId();
+	if (startupPortId !== null) {
+		reconfigurePort(startupPortId).catch((error) => {
+			console.error('Serial PRN bridge startup failed:', error);
+		});
+	}
 
 	return async () => {
 		clearInterval(pollTimer);
