@@ -175,7 +175,7 @@
 					</select>
 					<Button
 						type="button"
-						on:click={onTestSerialPort}
+						onclick={onTestSerialPort}
 						disabled={!selectedPortId || isTestCoolingDown || isTesting}
 						variant="secondary"
 					>
