@@ -40,6 +40,7 @@ function createRandomPrnPath() {
 
 let configuredPortId = '';
 let activePort = null;
+let activePortId = '';
 let pendingBuffer = Buffer.alloc(0);
 let inactivityTimer = null;
 
@@ -77,15 +78,14 @@ export async function sendSerialBridgeCommand(portId, data) {
 		return { ok: false, reason: 'missing-port-id' };
 	}
 
-	const activePortPath = typeof activePort?.path === 'string' ? activePort.path : '';
-	if (activePortPath && portId !== activePortPath) {
+	if (activePortId && portId !== activePortId) {
 		console.error(
-			`Serial PRN bridge test send failed: requested port ${portId} does not match active port ${activePortPath}`
+			`Serial PRN bridge test send failed: requested port ${portId} does not match active port ${activePortId}`
 		);
 		return { ok: false, reason: 'port-mismatch' };
 	}
 
-	if (!activePortPath && portId !== configuredPortId) {
+	if (!activePortId && portId !== configuredPortId) {
 		console.error(
 			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
 		);
@@ -155,6 +155,7 @@ export function startSerialPrnBridge() {
 
 		const portToClose = activePort;
 		activePort = null;
+		activePortId = '';
 
 		await new Promise((resolve) => {
 			portToClose.removeAllListeners();
@@ -191,6 +192,7 @@ export function startSerialPrnBridge() {
 		});
 
 		activePort = port;
+		activePortId = portId;
 		console.log(`Serial PRN bridge listening on ${portId}`);
 	}
 
