@@ -1,15 +1,32 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
 
 	type SerialPortOption = {
 		id: string;
 	};
 
+	type TestSendStatus = 'idle' | 'success' | 'failed';
+
 	let ports: SerialPortOption[] = [];
 	let selectedPortId = '';
 	let isLoading = true;
 	let error = '';
+	let isTesting = false;
+	let testSendStatus: TestSendStatus = 'idle';
+	let testCooldownEndsAt = 0;
+	let now = Date.now();
+	let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+	$: remainingTestCooldownSeconds = Math.max(0, Math.ceil((testCooldownEndsAt - now) / 1000));
+	$: isTestCoolingDown = remainingTestCooldownSeconds > 0;
+	$: testButtonLabel = isTesting
+		? '...'
+		: isTestCoolingDown
+			? `${remainingTestCooldownSeconds}s`
+			: 'Test';
+	$: testSendStatusLabel = testSendStatus === 'success' ? 'Send succeeded' : 'Send failed';
 
 	$: displayPorts =
 		selectedPortId && !ports.some((port) => port.id === selectedPortId)
@@ -44,6 +61,7 @@
 		const nextValue = (event.currentTarget as HTMLSelectElement).value;
 		selectedPortId = nextValue;
 		error = '';
+		testSendStatus = 'idle';
 
 		const response = await fetch('/api/settings/serial-port', {
 			method: 'PUT',
@@ -58,7 +76,75 @@
 		}
 	}
 
+	function startCooldown() {
+		testCooldownEndsAt = Date.now() + 30_000;
+		now = Date.now();
+
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+		}
+
+		countdownTimer = setInterval(() => {
+			now = Date.now();
+
+			if (now >= testCooldownEndsAt && countdownTimer) {
+				clearInterval(countdownTimer);
+				countdownTimer = null;
+			}
+		}, 250);
+	}
+
+	async function onTestSerialPort() {
+		if (!selectedPortId || isTestCoolingDown || isTesting) {
+			return;
+		}
+
+		error = '';
+		testSendStatus = 'idle';
+		isTesting = true;
+
+		const timeoutController = new AbortController();
+		const timeoutHandle = setTimeout(() => {
+			timeoutController.abort();
+		}, 5000);
+
+		try {
+			const response = await fetch('/api/settings/serial-port', {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({ selectedPortId }),
+				signal: timeoutController.signal
+			});
+
+			if (!response.ok) {
+				error = 'Failed to send test command';
+				testSendStatus = 'failed';
+				return;
+			}
+
+			testSendStatus = 'success';
+			startCooldown();
+		} catch (err) {
+			error =
+				err instanceof Error && err.name === 'AbortError'
+					? 'Test command timed out'
+					: 'Failed to send test command';
+			testSendStatus = 'failed';
+		} finally {
+			clearTimeout(timeoutHandle);
+			isTesting = false;
+		}
+	}
+
 	onMount(loadSettings);
+
+	onDestroy(() => {
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+		}
+	});
 </script>
 
 <div class="mx-auto mt-10 max-w-4xl px-4">
@@ -87,6 +173,21 @@
 							<option value={port.id}>{port.id}</option>
 						{/each}
 					</select>
+					<Button
+						type="button"
+						onclick={onTestSerialPort}
+						disabled={!selectedPortId || isTestCoolingDown || isTesting}
+						variant="secondary"
+					>
+						{testButtonLabel}
+					</Button>
+					{#if testSendStatus !== 'idle'}
+						<span
+							class="text-sm {testSendStatus === 'success' ? 'text-emerald-400' : 'text-rose-400'}"
+						>
+							{testSendStatusLabel}
+						</span>
+					{/if}
 				</div>
 			{/if}
 
