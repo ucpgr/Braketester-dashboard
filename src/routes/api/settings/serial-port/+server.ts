@@ -45,50 +45,12 @@ export async function POST({ request }) {
 	}
 
 	const sentByBridge = await sendSerialBridgeCommand(selectedPortId, 't');
-	if (sentByBridge) {
-		return json({ ok: true });
+	if (!sentByBridge) {
+		return json(
+			{ error: 'Failed to send test command over active serial bridge port' },
+			{ status: 500 }
+		);
 	}
 
-	const port = new SerialPort({ path: selectedPortId, baudRate: 9600, autoOpen: false });
-
-	try {
-		await new Promise<void>((resolve, reject) => {
-			port.open((error) => {
-				if (error) {
-					reject(error);
-					return;
-				}
-
-				resolve();
-			});
-		});
-
-		await new Promise<void>((resolve, reject) => {
-			port.write('t', (error) => {
-				if (error) {
-					reject(error);
-					return;
-				}
-
-				port.drain((drainError) => {
-					if (drainError) {
-						reject(drainError);
-						return;
-					}
-
-					resolve();
-				});
-			});
-		});
-
-		return json({ ok: true });
-	} catch {
-		return json({ error: 'Failed to send test command over serial port' }, { status: 500 });
-	} finally {
-		if (port.isOpen) {
-			await new Promise<void>((resolve) => {
-				port.close(() => resolve());
-			});
-		}
-	}
+	return json({ ok: true });
 }
