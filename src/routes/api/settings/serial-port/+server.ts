@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { SerialPort } from 'serialport';
 import { getLptSerialPortSetting, setLptSerialPortSetting } from '$lib/server/settingsDb';
+import { sendSerialBridgeCommand } from '../../../../../server/serialPrnBridge.js';
 
 export async function GET() {
 	const selectedPortId = getLptSerialPortSetting();
@@ -41,6 +42,11 @@ export async function POST({ request }) {
 
 	if (!selectedPortId) {
 		return json({ error: 'selectedPortId is required' }, { status: 400 });
+	}
+
+	const sentByBridge = await sendSerialBridgeCommand(selectedPortId, 't');
+	if (sentByBridge) {
+		return json({ ok: true });
 	}
 
 	const port = new SerialPort({ path: selectedPortId, baudRate: 9600, autoOpen: false });

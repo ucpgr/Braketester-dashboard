@@ -37,12 +37,50 @@ function createRandomPrnPath() {
 	return path.join(PRN_OUTPUT_DIR, fileName);
 }
 
-export function startSerialPrnBridge() {
-	let configuredPortId = '';
-	let activePort = null;
-	let pendingBuffer = Buffer.alloc(0);
-	let inactivityTimer = null;
+let configuredPortId = '';
+let activePort = null;
+let pendingBuffer = Buffer.alloc(0);
+let inactivityTimer = null;
 
+function writeToActivePort(data) {
+	if (!activePort || !activePort.isOpen) {
+		throw new Error('No active serial port connection');
+	}
+
+	return new Promise((resolve, reject) => {
+		activePort.write(data, (error) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+
+			activePort.drain((drainError) => {
+				if (drainError) {
+					reject(drainError);
+					return;
+				}
+
+				resolve();
+			});
+		});
+	});
+}
+
+export async function sendSerialBridgeCommand(portId, data) {
+	if (!portId || portId !== configuredPortId) {
+		return false;
+	}
+
+	try {
+		await writeToActivePort(data);
+		return true;
+	} catch (error) {
+		console.error(`Serial PRN bridge failed to write to ${portId}:`, error);
+		return false;
+	}
+}
+
+export function startSerialPrnBridge() {
 	function clearInactivityTimer() {
 		if (!inactivityTimer) {
 			return;

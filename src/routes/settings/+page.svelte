@@ -7,17 +7,26 @@
 		id: string;
 	};
 
+	type TestSendStatus = 'idle' | 'success' | 'failed';
+
 	let ports: SerialPortOption[] = [];
 	let selectedPortId = '';
 	let isLoading = true;
 	let error = '';
+	let isTesting = false;
+	let testSendStatus: TestSendStatus = 'idle';
 	let testCooldownEndsAt = 0;
 	let now = Date.now();
 	let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 	$: remainingTestCooldownSeconds = Math.max(0, Math.ceil((testCooldownEndsAt - now) / 1000));
 	$: isTestCoolingDown = remainingTestCooldownSeconds > 0;
-	$: testButtonLabel = isTestCoolingDown ? `${remainingTestCooldownSeconds}s` : 'Test';
+	$: testButtonLabel = isTesting
+		? '...'
+		: isTestCoolingDown
+			? `${remainingTestCooldownSeconds}s`
+			: 'Test';
+	$: testSendStatusLabel = testSendStatus === 'success' ? 'Send succeeded' : 'Send failed';
 
 	$: displayPorts =
 		selectedPortId && !ports.some((port) => port.id === selectedPortId)
@@ -52,6 +61,7 @@
 		const nextValue = (event.currentTarget as HTMLSelectElement).value;
 		selectedPortId = nextValue;
 		error = '';
+		testSendStatus = 'idle';
 
 		const response = await fetch('/api/settings/serial-port', {
 			method: 'PUT',
@@ -85,26 +95,47 @@
 	}
 
 	async function onTestSerialPort() {
-		if (!selectedPortId || isTestCoolingDown) {
+		if (!selectedPortId || isTestCoolingDown || isTesting) {
 			return;
 		}
 
 		error = '';
+		testSendStatus = 'idle';
+		isTesting = true;
 
-		const response = await fetch('/api/settings/serial-port', {
-			method: 'POST',
-			headers: {
-				'content-type': 'application/json'
-			},
-			body: JSON.stringify({ selectedPortId })
-		});
+		const timeoutController = new AbortController();
+		const timeoutHandle = setTimeout(() => {
+			timeoutController.abort();
+		}, 5000);
 
-		if (!response.ok) {
-			error = 'Failed to send test command';
-			return;
+		try {
+			const response = await fetch('/api/settings/serial-port', {
+				method: 'POST',
+				headers: {
+					'content-type': 'application/json'
+				},
+				body: JSON.stringify({ selectedPortId }),
+				signal: timeoutController.signal
+			});
+
+			if (!response.ok) {
+				error = 'Failed to send test command';
+				testSendStatus = 'failed';
+				return;
+			}
+
+			testSendStatus = 'success';
+			startCooldown();
+		} catch (err) {
+			error =
+				err instanceof Error && err.name === 'AbortError'
+					? 'Test command timed out'
+					: 'Failed to send test command';
+			testSendStatus = 'failed';
+		} finally {
+			clearTimeout(timeoutHandle);
+			isTesting = false;
 		}
-
-		startCooldown();
 	}
 
 	onMount(loadSettings);
@@ -145,11 +176,18 @@
 					<Button
 						type="button"
 						on:click={onTestSerialPort}
-						disabled={!selectedPortId || isTestCoolingDown}
+						disabled={!selectedPortId || isTestCoolingDown || isTesting}
 						variant="secondary"
 					>
 						{testButtonLabel}
 					</Button>
+					{#if testSendStatus !== 'idle'}
+						<span
+							class="text-sm {testSendStatus === 'success' ? 'text-emerald-400' : 'text-rose-400'}"
+						>
+							{testSendStatusLabel}
+						</span>
+					{/if}
 				</div>
 			{/if}
 
