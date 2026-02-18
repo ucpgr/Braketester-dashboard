@@ -34,3 +34,55 @@ export async function PUT({ request }) {
 
 	return json({ selectedPortId });
 }
+
+export async function POST({ request }) {
+	const body = (await request.json()) as { selectedPortId?: string };
+	const selectedPortId = body.selectedPortId?.trim() ?? '';
+
+	if (!selectedPortId) {
+		return json({ error: 'selectedPortId is required' }, { status: 400 });
+	}
+
+	const port = new SerialPort({ path: selectedPortId, baudRate: 9600, autoOpen: false });
+
+	try {
+		await new Promise<void>((resolve, reject) => {
+			port.open((error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+
+				resolve();
+			});
+		});
+
+		await new Promise<void>((resolve, reject) => {
+			port.write('t', (error) => {
+				if (error) {
+					reject(error);
+					return;
+				}
+
+				port.drain((drainError) => {
+					if (drainError) {
+						reject(drainError);
+						return;
+					}
+
+					resolve();
+				});
+			});
+		});
+
+		return json({ ok: true });
+	} catch {
+		return json({ error: 'Failed to send test command over serial port' }, { status: 500 });
+	} finally {
+		if (port.isOpen) {
+			await new Promise<void>((resolve) => {
+				port.close(() => resolve());
+			});
+		}
+	}
+}

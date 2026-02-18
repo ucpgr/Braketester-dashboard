@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Button } from '$lib/components/ui/button';
 
 	type SerialPortOption = {
 		id: string;
@@ -10,6 +11,13 @@
 	let selectedPortId = '';
 	let isLoading = true;
 	let error = '';
+	let testCooldownEndsAt = 0;
+	let now = Date.now();
+	let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+	$: remainingTestCooldownSeconds = Math.max(0, Math.ceil((testCooldownEndsAt - now) / 1000));
+	$: isTestCoolingDown = remainingTestCooldownSeconds > 0;
+	$: testButtonLabel = isTestCoolingDown ? `${remainingTestCooldownSeconds}s` : 'Test';
 
 	$: displayPorts =
 		selectedPortId && !ports.some((port) => port.id === selectedPortId)
@@ -58,7 +66,54 @@
 		}
 	}
 
+	function startCooldown() {
+		testCooldownEndsAt = Date.now() + 30_000;
+		now = Date.now();
+
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+		}
+
+		countdownTimer = setInterval(() => {
+			now = Date.now();
+
+			if (now >= testCooldownEndsAt && countdownTimer) {
+				clearInterval(countdownTimer);
+				countdownTimer = null;
+			}
+		}, 250);
+	}
+
+	async function onTestSerialPort() {
+		if (!selectedPortId || isTestCoolingDown) {
+			return;
+		}
+
+		error = '';
+
+		const response = await fetch('/api/settings/serial-port', {
+			method: 'POST',
+			headers: {
+				'content-type': 'application/json'
+			},
+			body: JSON.stringify({ selectedPortId })
+		});
+
+		if (!response.ok) {
+			error = 'Failed to send test command';
+			return;
+		}
+
+		startCooldown();
+	}
+
 	onMount(loadSettings);
+
+	onDestroy(() => {
+		if (countdownTimer) {
+			clearInterval(countdownTimer);
+		}
+	});
 </script>
 
 <div class="mx-auto mt-10 max-w-4xl px-4">
@@ -87,6 +142,14 @@
 							<option value={port.id}>{port.id}</option>
 						{/each}
 					</select>
+					<Button
+						type="button"
+						on:click={onTestSerialPort}
+						disabled={!selectedPortId || isTestCoolingDown}
+						variant="secondary"
+					>
+						{testButtonLabel}
+					</Button>
 				</div>
 			{/if}
 
