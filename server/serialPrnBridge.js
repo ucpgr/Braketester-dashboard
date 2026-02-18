@@ -37,12 +37,74 @@ function createRandomPrnPath() {
 	return path.join(PRN_OUTPUT_DIR, fileName);
 }
 
-export function startSerialPrnBridge() {
-	let configuredPortId = '';
-	let activePort = null;
-	let pendingBuffer = Buffer.alloc(0);
-	let inactivityTimer = null;
+let configuredPortId = '';
+let activePort = null;
+let pendingBuffer = Buffer.alloc(0);
+let inactivityTimer = null;
 
+function writeToActivePort(data) {
+	if (!activePort) {
+		throw new Error('No active serial port object');
+	}
+
+	if (!activePort.isOpen) {
+		throw new Error('Active serial port is not open');
+	}
+
+	return new Promise((resolve, reject) => {
+		activePort.write(data, (error) => {
+			if (error) {
+				reject(error);
+				return;
+			}
+
+			activePort.drain((drainError) => {
+				if (drainError) {
+					reject(drainError);
+					return;
+				}
+
+				resolve();
+			});
+		});
+	});
+}
+
+export async function sendSerialBridgeCommand(portId, data) {
+	if (!portId) {
+		console.error('Serial PRN bridge test send failed: requested portId was empty');
+		return { ok: false, reason: 'missing-port-id' };
+	}
+
+	if (portId !== configuredPortId) {
+		console.error(
+			`Serial PRN bridge test send failed: requested port ${portId} does not match configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'port-mismatch' };
+	}
+
+	if (!activePort) {
+		console.error(
+			`Serial PRN bridge test send failed: no active port object for configured port ${configuredPortId || '(none)'}`
+		);
+		return { ok: false, reason: 'no-active-port' };
+	}
+
+	if (!activePort.isOpen) {
+		console.error(`Serial PRN bridge test send failed: active port ${portId} is not open`);
+		return { ok: false, reason: 'port-not-open' };
+	}
+
+	try {
+		await writeToActivePort(data);
+		return { ok: true };
+	} catch (error) {
+		console.error(`Serial PRN bridge failed to write test data to ${portId}:`, error);
+		return { ok: false, reason: 'write-error' };
+	}
+}
+
+export function startSerialPrnBridge() {
 	function clearInactivityTimer() {
 		if (!inactivityTimer) {
 			return;
