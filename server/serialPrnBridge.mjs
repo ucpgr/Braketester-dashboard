@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { patchPrnBuffer } from './prnPatch.js';
 import { getPatchData } from './prnData.js';
 import { spawnSync } from "child_process";
+import { emitPrint } from './printEmitter.js';
 
 /* ===================== DEBUG ===================== */
 
@@ -43,6 +44,7 @@ const SETTING_KEY = 'lpt_serial_port';
 const PRN_OUTPUT_DIR = '/opt/printqueue/incoming';
 const INACTIVITY_MS = 2000;
 const TEST_COOLDOWN_MS = 30_000;
+
 
 /* ===================== DB ===================== */
 
@@ -112,6 +114,7 @@ function flushBuffer() {
 	state.buffer = Buffer.alloc(0);
 
 	try {
+		emitPrint('converting');
 		const patched = patchPrnBuffer(input, getPatchData());
 
 		fs.mkdirSync(PRN_OUTPUT_DIR, { recursive: true });
@@ -156,8 +159,9 @@ function flushBuffer() {
 
 		log("TIFF written", outPath);
 
+		emitPrint('printing');
 		// ---- PRINT ----
-		const lp = spawnSync(
+		/*const lp = spawnSync(
 			"lp",
 			[
 				"-o", "media=A4",
@@ -171,12 +175,13 @@ function flushBuffer() {
 
 		if (lp.status !== 0) {
 			throw new Error("lp failed");
-		}
-
+		}*/
+		emitPrint('done');
 		log("Printed", outPath);
 	}
 	catch (err) {
 		log("render/print failed, buffer dropped", err);
+		emitPrint('error');
 	}
 }
 
@@ -201,6 +206,9 @@ function ensureWorker() {
 		//log('worker → parent', msg);
 
 		if (msg.event === 'data') {
+			if (state.buffer.length === 0) {
+				emitPrint('receiving');
+			}
 			state.buffer = Buffer.concat([state.buffer, Buffer.from(msg.bytes)]);
 			scheduleFlush();
 		}

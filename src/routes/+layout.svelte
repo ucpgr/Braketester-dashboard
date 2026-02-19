@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
+	import PrintToast from '$lib/components/PrintToast.svelte';
 
 	let { children } = $props();
 
@@ -19,6 +20,7 @@
 
 		return page.url.pathname.startsWith(path);
 	}
+
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
@@ -70,6 +72,7 @@
 		</div>
 	</header>
 	<div class="backdrop-brightness-[1.05]">
+		<PrintToast />
 		{@render children()}
 	</div>
 </div>

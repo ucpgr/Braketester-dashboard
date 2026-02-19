@@ -1,39 +1,28 @@
 import http from 'http';
-import { Server } from 'socket.io';
 
 // IMPORTANT: named export
 import { handler } from './build/handler.js';
-
+import { initSocketIO } from './server/server.js';
 // REQUIRED: adapter-node environment setup
 import './build/env.js';
 
-import { watchPrnFolder } from './server/prnWatcher.js';
 import { startSerialPrnBridge } from './server/serialPrnBridge.mjs';
+import { registerPrintEmitter } from './server/printEmitter.js';
 
 startSerialPrnBridge();
-/*
-watchPrnFolder('/opt/printqueue/incoming', () => ({
-	user: {
-		line1: 'Delphic',
-		line2: 'test1',
-		line3: 'test2'
-	},
-	vehicle: {
-		licence: 'AB12 CDE',
-		make: 'Volvo',
-		model: 'FH16',
-		milage: '123456'
-	}
-}));*/
+
 
 const server = http.createServer((req, res) => {
 	handler(req, res);
 });
 
 // Socket.IO
-const io = new Server(server, {
-	cors: { origin: '*' }
+const io = initSocketIO(server);
+
+registerPrintEmitter((stage) => {
+	io.emit('print', { stage });
 });
+
 
 // Fake telemetry @ 30 Hz
 let t = 0;
