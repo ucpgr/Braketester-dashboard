@@ -8,10 +8,10 @@ import { handler } from './build/handler.js';
 import './build/env.js';
 
 import { watchPrnFolder } from './server/prnWatcher.js';
-import { startSerialPrnBridge } from './server/serialPrnBridge.js';
+import { startSerialPrnBridge } from './server/serialPrnBridge.mjs';
 
 startSerialPrnBridge();
-
+/*
 watchPrnFolder('/opt/printqueue/incoming', () => ({
 	user: {
 		line1: 'Delphic',
@@ -24,7 +24,7 @@ watchPrnFolder('/opt/printqueue/incoming', () => ({
 		model: 'FH16',
 		milage: '123456'
 	}
-}));
+}));*/
 
 const server = http.createServer((req, res) => {
 	handler(req, res);

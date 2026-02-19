@@ -109,7 +109,7 @@
 		}, 5000);
 
 		try {
-			const response = await fetch('/api/settings/serial-port', {
+			const response = await fetch('/api/settings/serial-port/test', {
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json'

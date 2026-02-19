@@ -30,9 +30,11 @@ function verifyTemplate(buf) {
 			.toString('ascii');
 
 		if (actual !== label) {
+			console.log(buf);
 			throw new Error(
 				`PRN template mismatch: expected "${label}" at offset ${offset}, got "${actual}"`
 			);
+
 		}
 	}
 }
@@ -74,4 +76,36 @@ export function patchPrnFile(inputPath, outputPath, data) {
 	writeFixed(buf, FIELDS.testTime, time);
 
 	fs.writeFileSync(outputPath, buf);
+}
+
+
+export function patchPrnBuffer(inputBuf, data) {
+	const buf = Buffer.from(inputBuf); // copy, do not mutate caller buffer
+
+	verifyTemplate(buf);
+
+	// User info
+	writeFixed(buf, FIELDS.userLine1, data.user?.line1);
+	writeFixed(buf, FIELDS.userLine2, data.user?.line2);
+	writeFixed(buf, FIELDS.userLine3, data.user?.line3);
+
+	// Vehicle info
+	writeFixed(buf, FIELDS.licence, data.vehicle?.licence);
+	writeFixed(buf, FIELDS.make,    data.vehicle?.make);
+	writeFixed(buf, FIELDS.model,   data.vehicle?.model);
+	writeFixed(buf, FIELDS.mileage, data.vehicle?.mileage);
+
+	// Date/time
+	const now = new Date();
+	const dd = String(now.getDate()).padStart(2, '0');
+	const mm = String(now.getMonth() + 1).padStart(2, '0');
+	const yy = String(now.getFullYear()).slice(-2);
+	writeFixed(buf, FIELDS.testDate, `${dd}/${mm}/${yy}`);
+
+	const hh = String(now.getHours()).padStart(2, '0');
+	const mi = String(now.getMinutes()).padStart(2, '0');
+	const ss = String(now.getSeconds()).padStart(2, '0');
+	writeFixed(buf, FIELDS.testTime, `${hh}:${mi}:${ss}`);
+
+	return buf; // caller decides what to do with it
 }
